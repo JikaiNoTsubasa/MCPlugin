@@ -1,0 +1,28 @@
+name: MCPlugin
+main: fr.triedge.minecraft.plugin.MCPlugin
+version: 1.4
+author: Jikai
+api-version: 1.14
+
+commands:
+  wregister:
+    description: Enregistre un teleport
+    usage: /wregister NAME
+  wlist:
+    description: Liste les teleports
+    usage: /wlist
+  wremove:
+    description: Supprime un teleport
+    usage: /wremove NAME
+  whelp:
+    description: Shows plugin help
+    usage: /whelp
+  detector:
+    description: Cherche des minerai 50 block en dessous
+    usage: /detector
+  inv:
+    description: Ouvre le deuxieme inventaire
+    usage: /inv
+  saveinv:
+    description: Sauvegarde le deuxieme inventaire
+    usage: /saveinv

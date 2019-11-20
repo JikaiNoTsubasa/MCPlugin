@@ -1,0 +1,410 @@
+<!DOCTYPE>
+<html>
+<head>
+	<title>MC Dashboard</title>
+	<link rel="stylesheet" href="default.css">
+	<meta charset="UTF-8">
+	<style type="text/css">
+	/*
+GRAY DARK: #22252c
+GRAY: #282c35
+GRAY LIGHT: #2b323c
+PINK: #e4707d
+GREEN: #70e48b
+GOLD: #e4cd70
+PROGRESS BACK: #05263B
+*/
+
+@font-face {
+    font-family: muliRegular;
+    src: url("fonts/Muli.ttf");
+}
+@font-face {
+    font-family: kolikoBold;
+    src: url("fonts/koliko-Bold.ttf");
+}
+@font-face {
+    font-family: kolikoLight;
+    src: url("fonts/koliko-Light.ttf");
+}
+@font-face {
+    font-family: kolikoRegular;
+    src: url("fonts/koliko-Regular.ttf");
+}
+
+html
+{
+	margin: 0;
+	padding: 0;
+	width: 100%;
+	
+	--color-gold: #e4cd70;
+	--bg-color: #22252c;
+	--bg-note-color: #282c35;
+	--bg-light-color: #2b323c;
+	--title-note-color: #e4707d;
+	--feature-note-color: #70e48b;
+	--progress-bck-color: #05263B;
+}
+
+body
+{
+	background: var(--bg-color);
+	color: #FFF;
+	font-family: muliRegular;
+	font-size: 12px;
+}
+
+.menu{
+	width: 80%;
+	height: 30px;
+	margin: auto;
+	margin-bottom: 10px;
+	background: var(--bg-note-color);
+}
+
+.menu a
+{
+	text-decoration: none;
+	display: inline-block;
+	text-align: center;
+	color: var(--feature-note-color);
+	width: 100px;
+	height: 30px;
+	line-height: 30px;
+}
+
+.menu a:hover
+{
+	color: var(--title-note-color);
+	background: var(--bg-light-color);
+}
+
+.link
+{
+	text-decoration: none;
+	display: block;
+	color: var(--feature-note-color);
+}
+
+.panel
+{
+	width: 80%;
+	margin: auto;
+}
+
+svg
+{
+	position: relative;
+	width: 100%;
+	height: 100%;
+	z-index: 1000;
+	justify-content: center;
+	align-items: center;
+	text-align: center;
+}
+
+svg circle
+{
+	width: 100%;
+	height: 100%;
+	fill: none;
+	stroke: #191919;
+	stroke-width: 10;
+	stroke-linecap: round;
+	transform: translate(5px,5px);
+}
+
+svg circle:nth-child(2)
+{
+	/*stroke-dasharray: 275,1000;
+	stroke-dashoffset: 0;
+	*/
+	stroke-dashoffset: 0;
+}
+
+.card:nth-child(1) svg circle:nth-child(2)
+{
+	stroke: #00a1ff;
+}
+
+.card:nth-child(2) svg circle:nth-child(2)
+{
+	stroke: #00ff43;
+}
+
+.card
+{
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	text-align: center;
+	overflow: hidden;
+	transition: 0.5s;
+}
+
+.card:hover
+{
+	transform: translateY(-10px);
+	/*box-shadow: 0 15px 35px rgba(0,0,0,.5);*/
+}
+
+.card:before
+{
+	content: '';
+	position: absolute;
+	top: 0;
+	left: -50%;
+	width: 100%;
+	height: 100%;
+	/*background: rgba(255, 255, 255 ,.03);*/
+	pointer-events: none;
+	z-index: 1;
+}
+
+.percent
+{
+	position: relative;
+	width: 100px;
+	height: 100px;
+	z-index: 1000;
+}
+
+.percent .number
+{
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	border-radius: 50%;
+}
+
+.percent .number h2
+{
+	margin: 0;
+	color: #fff;
+	font-weight: 700;
+	font-size: 30px;
+	transition: 0.5s;
+}
+
+.percent .number h2 span
+{
+	font-size: 15px;
+	color: #fff;
+	transition: 0.5s;
+}
+
+.card:hover .percent .number h2
+{
+	color: var(--color-gold);
+	font-size: 35px;
+}
+
+.card:hover .percent .number h2 span
+{
+	color: var(--color-gold);
+	font-size: 20px;
+}
+
+.text
+{
+	position: relative;
+	color: var(--feature-note-color);
+	font-size: 18px;
+	letter-spacing: 1px;
+	text-transform: uppercase;
+	transition: 0.5s;
+}
+
+.metric_panel
+{
+	background: var(--bg-note-color);
+	margin-left: 20px;
+	display: inline-block;
+	width: 100px;
+	height: 100px;
+	vertical-align: top;
+	padding: 10px;
+}
+
+.metric_panel_double
+{
+	background: var(--bg-note-color);
+	margin-left: 20px;
+	display: inline-block;
+	width: 200px;
+	height: 100px;
+	vertical-align: top;
+	padding: 10px;
+}
+
+.metric_panel h3
+{
+	color: var(--feature-note-color);
+}
+
+.metric_panel_double h3
+{
+	color: var(--feature-note-color);
+}
+
+.metric_div
+{
+	text-align: center;
+}
+
+.metric_value
+{
+	font-size: 30px;
+}
+
+.metric_type
+{
+	font-size: 10px;
+}
+
+.bar_background
+{
+	height 20px;
+	width: 100%;
+	background-color: var(--progress-bck-color);
+	display: block;
+}
+
+.bar_foreground
+{
+	background-color: var(--title-note-color);
+	display: block;
+}
+
+.bar_text
+{
+}
+
+.note
+{
+	padding: 10px;
+	margin-top: 20px;
+	background: var(--bg-note-color);
+}
+
+.note h2
+{
+	color: var(--title-note-color);
+}
+
+.note h3
+{
+	color: var(--feature-note-color);
+}
+
+.gold
+{
+	color: var(--color-gold);
+}
+
+.mc_recipe_block
+{
+	display: inline-block;
+	background: var(--bg-note-color);
+	margin-left: 10px;
+	margin-bottom: 10px;
+	padding: 10px;
+	width: 200px;
+}
+
+.mc_table
+{
+	border-collapse: collapse;
+	border: 1px solid #FFF;
+	margin: 0 auto 0 auto;
+}
+
+.mc_table tr,td
+{
+	border-collapse: collapse;
+	border: 1px solid #FFF;
+}
+
+.mc_cell
+{
+	width: 32px;
+	height: 32px;
+	display: block;
+}
+	</style>
+</head>
+<body>
+<div class="panel">
+	<h1>Minecraft Dashboard</h1>
+	<!-- CONNECTED USERS -->
+	<div class="metric_panel_double">
+		<h3>Connected</h3>
+		##CONNECTED##
+	</div>
+	<!-- CPU -->
+	<div class="metric_panel">
+		<h3>CPU</h3>
+		<div class="metric_div">
+			<span class="metric_value">##CPU_PERCENT##</span>
+			<span class="metric_type">%</span>
+		</div>
+	</div>
+	<!-- MEMORY OS -->
+	<div class="metric_panel">
+		<h3>MEM OS</h3>
+		<div class="metric_div">
+			<span class="metric_value">##MEM_OS_PERCENT##</span>
+			<span class="metric_type">%</span>
+			<br />
+			<span class="metric_type">##MEM_OS_CUR##/##MEM_OS_MAX##MB</span>
+		</div>
+	</div>
+	<!-- HEAP -->
+	<!-- MEMORY OS -->
+	<div class="metric_panel">
+		<h3>Heap</h3>
+		<div class="metric_div">
+			<span class="metric_value">##MEM_HEAP_PERCENT##</span>
+			<span class="metric_type">%</span>
+			<br />
+			<span class="metric_type">##MEM_HEAP_CUR##/##MEM_HEAP_MAX##MB</span>
+		</div>
+	</div>
+	
+	<!-- 
+	<div class="metric_panel">
+		<h3>Metrics</h3>
+		<div class="bar_background">
+			<div class="bar_foreground" style="width:70%">&nbsp</div>
+		</div>
+		<br />
+		<div class="bar_background">
+			<div class="bar_foreground" style="width:1%">&nbsp</div>
+		</div>
+	</div>
+	<div class="metric_panel">
+		<div class="card">
+			<div class="box">
+				<div class="percent">
+					<svg>
+						<circle cx="45" cy="45" r="45"></circle>
+						<circle stroke-dasharray="247,1000" cx="45" cy="45" r="45"></circle>
+					</svg>
+					<div class="number">
+						<h2>60<span>%</span></h2>
+					</div>
+				</div>
+				<h2 class="text">Metric</h2>
+			</div>
+		</div>
+	</div>
+	-->
+</div>
+</body>
+</html>
