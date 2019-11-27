@@ -683,7 +683,7 @@ public class MCPlugin extends JavaPlugin implements Listener{
 	public void onDisable() {
 		super.onDisable();
 		getServer().getScheduler().cancelTasks(this);
-		getDashboard().setRunning(false);
+		//getDashboard().setRunning(false);
 	}
 
 	@Override
@@ -722,7 +722,9 @@ public class MCPlugin extends JavaPlugin implements Listener{
 		int res2 = scheduler.scheduleSyncRepeatingTask(this, new InventorySaverTask(this), 0L, 6000L);
 		if (res2 == -1)
 			getLogger().log(Level.SEVERE, "Cannot schedule InventorySaverTask");
-
+		int res3 = scheduler.scheduleSyncRepeatingTask(this, new MetricSaverTask(this), 0L, 3000L);
+		if (res3 == -1)
+			getLogger().log(Level.SEVERE, "Cannot schedule MetricSaverTask");
 		
 		// Create custom recipes
 		getServer().addRecipe(Custom.createImprovedGoldPickaxeRecipe(this, Material.ACACIA_LOG));
@@ -761,10 +763,12 @@ public class MCPlugin extends JavaPlugin implements Listener{
 		getServer().addRecipe(Custom.createInventoryPotionRecipe(this));
 		
 		// Start Dashboard web server
+		/*
 		setDashboard(new HTTPDashboard(8888));
 		Thread th = new Thread(getDashboard(), "MCDashboard");
 		getLogger().info("Started dashboard on port: 8888");
 		th.start();
+		*/
 
 		// Update Max stack
 		/*
