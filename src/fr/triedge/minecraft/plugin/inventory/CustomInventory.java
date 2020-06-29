@@ -119,8 +119,9 @@ public class CustomInventory {
 			getConfig().getConfig().set(invKey, null);
 		}
 		
-		int idx = 0;
-		for (ItemStack stack : inventory.getContents()) {
+		ItemStack[] stacks = inventory.getContents();
+		for (int idx = 0; idx < stacks.length; ++idx) {
+			ItemStack stack = stacks[idx];
 			if (stack == null)
 				continue;
 			String key = invKey+"."+idx;
