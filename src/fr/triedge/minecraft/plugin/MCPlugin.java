@@ -2,10 +2,10 @@ package fr.triedge.minecraft.plugin;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
-import java.util.Map.Entry;
 import java.util.logging.Level;
 
 import org.bukkit.Bukkit;
@@ -48,6 +48,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.util.Vector;
 
+import fr.triedge.minecraft.plugin.dialog.Dialog;
+import fr.triedge.minecraft.plugin.dialog.DialogAnswer;
 import fr.triedge.minecraft.plugin.inventory.CustomInventory;
 import fr.triedge.minecraft.plugin.magic.Spell;
 import fr.triedge.minecraft.plugin.magic.SpellFireBall;
@@ -81,9 +83,9 @@ import fr.triedge.minecraft.plugin.utils.Utils;
  * [ ] Popo REZ
  * [ ] Popo speed with scheduler
  * [ ] Spawn emerald chests
- * 
+ *
  * [ ] Add glow effects to detector blocks
- * 
+ *
  * Bug:
  * [x] v1.2 NullPointer - When break block with no item in hand
  * [x] v1.2 NullPointer - Magic config not loading
@@ -92,32 +94,33 @@ import fr.triedge.minecraft.plugin.utils.Utils;
  * [x] v1.3 ULT STICK breaks block but no loot from block
  * [x] v1.3 ULT WATER fill up water in bottle and changes it's name with right click
  * [x] v1.3 Teleport could happen event if destination is not on diamond block
- * 
+ *
  * Client:
  * [ ] Create laboratory
  * [ ] Terrasse double arches
  * [ ] Bouton fontaine
  * [x] Appart in mountain
  * [ ] Underwater house
- * 
+ *
  * @author steph
  *
  */
 public class MCPlugin extends JavaPlugin implements Listener{
 
 	// https://hub.spigotmc.org/nexus/content/repositories/snapshots/org/spigotmc/spigot-api/1.14.4-R0.1-SNAPSHOT/
-	
+
 	public static final String ULT_STICK 	= "ULTIMATE STICK";
-	public static final String VERSION		= "v1.4";
-	public static final String VERSION_SUB	= "Into Darkness";
+	public static final String VERSION		= "v1.16";
+	public static final String VERSION_SUB	= "Raise of Lava";
 	public static final String INV_FOLDER	= "inventories/";
 
 	//public FileConfiguration cfgMagic;
 	public ConfigurationHandler magic;
 	public ConfigurationHandler inventoryConfig;
 	public CustomInventory inventoryManager;
-	
+
 	private HTTPDashboard dashboard;
+	private HashMap<Player, Dialog> dialogs = new HashMap<>();
 
 	@Override
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -167,16 +170,31 @@ public class MCPlugin extends JavaPlugin implements Listener{
 					return true;
 				}
 				return true;
+			}else if (command.getName().equalsIgnoreCase("oui")) {
+				manageDialog(sender, DialogAnswer.YES);
+			}else if (command.getName().equalsIgnoreCase("non")) {
+				manageDialog(sender, DialogAnswer.NO);
 			}
 		}
 		return false;
+	}
+
+	private void manageDialog(CommandSender sender, DialogAnswer answer) {
+		if (sender == null)
+			return;
+		switch(answer) {
+		case YES:
+			break;
+		case NO:
+			break;
+		}
 	}
 
 	private void actionSaveInventory(CommandSender sender, int id) {
 		if (sender instanceof Player) {
 			Player player = (Player) sender;
 			inventoryManager.storeInventory(player.getName(), id);
-			player.sendMessage(ChatColor.GOLD+"Inventaire sauvegardé");
+			player.sendMessage(ChatColor.GOLD+"Inventaire sauvegardï¿½");
 			Utils.playSound(player, Sound.BLOCK_NOTE_BLOCK_BELL);
 		}
 	}
@@ -195,7 +213,7 @@ public class MCPlugin extends JavaPlugin implements Listener{
 	@EventHandler
 	public void onBlockDamageEvent(BlockDamageEvent event) {
 		Player player = event.getPlayer();
-		if (player.getInventory().getItemInMainHand() != null && 
+		if (player.getInventory().getItemInMainHand() != null &&
 				player.getInventory().getItemInMainHand().getType() == Material.STICK &&
 				player.getInventory().getItemInMainHand().getItemMeta().getDisplayName().equals(Custom.ULT_STICK)) {
 			Block block = event.getBlock();
@@ -221,7 +239,7 @@ public class MCPlugin extends JavaPlugin implements Listener{
 			durability--;
 			if (durability <= 0) {
 				player.getInventory().remove(item);
-				player.sendMessage(ChatColor.RED+item.getItemMeta().getDisplayName()+" est cassé!");
+				player.sendMessage(ChatColor.RED+item.getItemMeta().getDisplayName()+" est cassï¿½!");
 			}else {
 				Custom.decreaseDurability(item);
 			}
@@ -253,7 +271,7 @@ public class MCPlugin extends JavaPlugin implements Listener{
 			Slime slime = (Slime) event.getEntity();
 			Bukkit.broadcastMessage(ChatColor.ITALIC+""+ChatColor.DARK_PURPLE+"Un Slime est apparu: x:"+slime.getLocation().getX()+" y:"+slime.getLocation().getY()+" z:"+slime.getLocation().getZ());
 		}
-		
+
 		/*
 		if (event.getEntityType() == EntityType.ZOMBIE) {
 			if (Utils.percent(20)) {
@@ -376,7 +394,7 @@ public class MCPlugin extends JavaPlugin implements Listener{
 		}else if (name.equals(Custom.ULT_WATER) && event.getAction() == Action.RIGHT_CLICK_BLOCK) {
 			event.setCancelled(true);
 		}
-	
+
 	}
 
 	private ItemStack checkInventoryPotion(Player player) {
@@ -411,7 +429,7 @@ public class MCPlugin extends JavaPlugin implements Listener{
 				player.sendMessage(ChatColor.RED+"Aucun inventaire disponible pour l'id: "+id);
 				// Create Custom Inventory if not exist
 				inventoryManager.createEmptyInv(player, id);
-				player.sendMessage(ChatColor.RED+"Inventaire créé pour l'id: "+id);
+				player.sendMessage(ChatColor.RED+"Inventaire crÃ©Ã© pour l'id: "+id);
 				Utils.playSound(player, Sound.BLOCK_NOTE_BLOCK_BELL);
 				inv = inventoryManager.getInventory(player, id);
 			}
@@ -423,11 +441,48 @@ public class MCPlugin extends JavaPlugin implements Listener{
 	private void actionDetector(CommandSender sender) {
 		if (sender instanceof Player) {
 			Player player = (Player)sender;
-			HashMap<Material, Integer> resources = new HashMap<>();
+			//HashMap<Material, Integer> resources = new HashMap<>();
+			ArrayList<Block> blocks = new ArrayList<>();
 			int maxDist = 50;
 			Block block = player.getLocation().getBlock().getRelative(BlockFace.DOWN);
 			Location loc = block.getLocation();
 			player.sendMessage(ChatColor.GOLD+"Recherche avec le detecteur:");
+			int startX = block.getX() -(maxDist/2);
+			int startY = block.getY() -(maxDist/2);
+			int startZ = block.getZ() -(maxDist/2);
+
+			int endX = block.getX() +(maxDist/2);
+			int endY = block.getY() +(maxDist/2);
+			int endZ = block.getZ() +(maxDist/2);
+
+			for (int x = startX; x <= endX; ++x) {
+				for (int y = startY; y <= endY; ++y) {
+					for (int z = startZ; z <= endZ; ++z) {
+						loc.setX(x);
+						loc.setY(y);
+						loc.setZ(z);
+						Material type = loc.getBlock().getType();
+						if (
+								type == Material.DIAMOND_ORE ||
+								type == Material.IRON_ORE ||
+								type == Material.GOLD_ORE ||
+								type == Material.COAL_ORE ||
+								type == Material.EMERALD_ORE ||
+								type == Material.LAPIS_ORE) {
+							blocks.add(loc.getBlock());
+						}
+					}
+				}
+			}
+			if (blocks.isEmpty())
+				player.sendMessage(ChatColor.DARK_PURPLE+"Rien trouvï¿½");
+			else {
+				for (Block b : blocks) {
+					String name = b.getType().toString();
+					player.sendMessage(ChatColor.GREEN+name+" -> X:"+b.getX()+" Y:"+b.getY()+" Z:"+b.getZ());
+				}
+			}
+			/*
 			for (int i = 0; i <= maxDist; ++i) {
 				Material type = loc.getBlock().getType();
 				if (
@@ -447,12 +502,13 @@ public class MCPlugin extends JavaPlugin implements Listener{
 				loc.setY(loc.getY()-1);
 			}// end loop
 			if (resources.isEmpty())
-				player.sendMessage(ChatColor.DARK_PURPLE+"Rien trouvé");
+				player.sendMessage(ChatColor.DARK_PURPLE+"Rien trouvï¿½");
 			else {
 				for (Entry<Material, Integer> e : resources.entrySet()) {
 					player.sendMessage(ChatColor.GREEN+e.getKey().toString()+" -> "+e.getValue());
 				}
 			}
+			*/
 		}
 	}
 
@@ -601,7 +657,7 @@ public class MCPlugin extends JavaPlugin implements Listener{
 		// Create Custom Inventory if not exist
 		inventoryManager.createEmptyInv(p, 0);
 	}
-	
+
 	@EventHandler
 	public void onPlayerQuit(PlayerQuitEvent event) {
 		Player p = event.getPlayer();
@@ -611,7 +667,7 @@ public class MCPlugin extends JavaPlugin implements Listener{
 	public String[] readSign(Block block) {
 		Sign sign = (Sign) block.getState();
 		String[] lines = sign.getLines();
-		if (lines.length != 0) 
+		if (lines.length != 0)
 			return lines;
 		return null;
 	}
@@ -620,8 +676,8 @@ public class MCPlugin extends JavaPlugin implements Listener{
 		if (sender instanceof Player) {
 			if (doesWarpExist(target)) {
 				Player player = (Player) sender;
-				
-				
+
+
 				float pitch = player.getLocation().getPitch();
 				float yaw = player.getLocation().getYaw();
 				Vector vector = getConfig().getVector(target+".location");
@@ -631,7 +687,7 @@ public class MCPlugin extends JavaPlugin implements Listener{
 				Location target_loc = new Location(world, vector.getX(),vector.getY(),vector.getZ());
 				target_loc.setPitch(pitch);
 				target_loc.setYaw(yaw);
-				
+
 				Block block = target_loc.getBlock().getRelative(BlockFace.DOWN);
 				if (block != null && block.getType() == Material.DIAMOND_BLOCK) {
 					player.teleport(target_loc);
@@ -640,7 +696,7 @@ public class MCPlugin extends JavaPlugin implements Listener{
 				}else {
 					player.sendMessage(ChatColor.RED+"La destination n'est pas un block de diamant");
 				}
-				
+
 			}else {
 				sender.sendMessage("La destination n'existe pas!");
 			}
@@ -670,7 +726,7 @@ public class MCPlugin extends JavaPlugin implements Listener{
 				getConfig().set(name+".location", vector); 		// Saves the location as a vector
 				getConfig().set(name+".world", world);			//Saves the world name
 				//sender.sendMessage("Warp["+name+"][World: "+world+" X:"+vector.getX()+" Y:"+vector.getY()+" Z"+vector.getZ()+"]");
-				sender.sendMessage("Cible de teleportation sauvegardé: "+name);
+				sender.sendMessage("Cible de teleportation sauvegardï¿½: "+name);
 				getLogger().info("# REGISTER TP: "+name+"["+vector.getBlockX()+"/"+vector.getBlockY()+"/"+vector.getBlockZ()+"]");
 				saveConfig();
 			}else {
@@ -700,7 +756,7 @@ public class MCPlugin extends JavaPlugin implements Listener{
 		}
 		inventoryManager = new CustomInventory(inventoryConfig, this);
 		inventoryManager.loadAllInventories();
-		
+
 		// Register this plugin
 		getServer().getPluginManager().registerEvents(this, this);
 
@@ -725,7 +781,7 @@ public class MCPlugin extends JavaPlugin implements Listener{
 		int res3 = scheduler.scheduleSyncRepeatingTask(this, new MetricSaverTask(this), 0L, 3000L);
 		if (res3 == -1)
 			getLogger().log(Level.SEVERE, "Cannot schedule MetricSaverTask");
-		
+
 		// Create custom recipes
 		getServer().addRecipe(Custom.createImprovedGoldPickaxeRecipe(this, Material.ACACIA_LOG));
 		getServer().addRecipe(Custom.createImprovedGoldPickaxeRecipe(this, Material.BIRCH_LOG));
@@ -733,14 +789,14 @@ public class MCPlugin extends JavaPlugin implements Listener{
 		getServer().addRecipe(Custom.createImprovedGoldPickaxeRecipe(this, Material.JUNGLE_LOG));
 		getServer().addRecipe(Custom.createImprovedGoldPickaxeRecipe(this, Material.OAK_LOG));
 		getServer().addRecipe(Custom.createImprovedGoldPickaxeRecipe(this, Material.SPRUCE_LOG));
-		
+
 		getServer().addRecipe(Custom.createImprovedGoldAxeRecipe(this, Material.ACACIA_LOG));
 		getServer().addRecipe(Custom.createImprovedGoldAxeRecipe(this, Material.BIRCH_LOG));
 		getServer().addRecipe(Custom.createImprovedGoldAxeRecipe(this, Material.DARK_OAK_LOG));
 		getServer().addRecipe(Custom.createImprovedGoldAxeRecipe(this, Material.JUNGLE_LOG));
 		getServer().addRecipe(Custom.createImprovedGoldAxeRecipe(this, Material.OAK_LOG));
 		getServer().addRecipe(Custom.createImprovedGoldAxeRecipe(this, Material.SPRUCE_LOG));
-		
+
 		getServer().addRecipe(Custom.createImprovedGoldShovelRecipe(this, Material.ACACIA_LOG));
 		getServer().addRecipe(Custom.createImprovedGoldShovelRecipe(this, Material.BIRCH_LOG));
 		getServer().addRecipe(Custom.createImprovedGoldShovelRecipe(this, Material.DARK_OAK_LOG));
@@ -761,7 +817,7 @@ public class MCPlugin extends JavaPlugin implements Listener{
 		getServer().addRecipe(Custom.createGrenadeRecipe(this));
 		getServer().addRecipe(Custom.createNukeRecipe(this));
 		getServer().addRecipe(Custom.createInventoryPotionRecipe(this));
-		
+
 		// Start Dashboard web server
 		/*
 		setDashboard(new HTTPDashboard(8888));
@@ -859,8 +915,16 @@ public class MCPlugin extends JavaPlugin implements Listener{
 	public void setDashboard(HTTPDashboard dashboard) {
 		this.dashboard = dashboard;
 	}
-	
+
 	public static void main(String[] args) {
-		
+
+	}
+
+	public HashMap<Player, Dialog> getDialogs() {
+		return dialogs;
+	}
+
+	public void setDialogs(HashMap<Player, Dialog> dialogs) {
+		this.dialogs = dialogs;
 	}
 }

@@ -1,8 +1,8 @@
 name: MCPlugin
 main: fr.triedge.minecraft.plugin.MCPlugin
-version: 1.4
+version: 1.16
 author: Jikai
-api-version: 1.14
+api-version: 1.16
 
 commands:
   wregister:
@@ -18,7 +18,7 @@ commands:
     description: Shows plugin help
     usage: /whelp
   detector:
-    description: Cherche des minerai 50 block en dessous
+    description: Cherche des minerai 50 blocks autour
     usage: /detector
   inv:
     description: Ouvre le deuxieme inventaire
@@ -26,3 +26,9 @@ commands:
   saveinv:
     description: Sauvegarde le deuxieme inventaire
     usage: /saveinv
+  oui:
+    description: Accepte la demande
+    usage: /oui
+  non:
+    description: Refuse la demande
+    usage: /non
