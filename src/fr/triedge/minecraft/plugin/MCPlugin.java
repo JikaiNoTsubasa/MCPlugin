@@ -249,13 +249,15 @@ public class MCPlugin extends JavaPlugin implements Listener{
 			return;
 		String name = item.getItemMeta().getDisplayName();
 		if (name.equals(Custom.IMP_GOLD_PICKAXE) ||
-				name.equals(Custom.IMP_DIAMOND_PICKAXE)) {
+				name.equals(Custom.IMP_DIAMOND_PICKAXE) ||
+				name.equals(Custom.IMP_GOLD_SHOVEL) ||
+				name.equals(Custom.IMP_GOLD_AXE)) {
 			// Manage durability
 			int durability = Integer.valueOf(item.getItemMeta().getLore().get(0));
 			durability--;
 			if (durability <= 0) {
 				player.getInventory().remove(item);
-				player.sendMessage(ChatColor.RED+item.getItemMeta().getDisplayName()+" est cass�!");
+				player.sendMessage(ChatColor.RED+item.getItemMeta().getDisplayName()+" est cassé!");
 			}else {
 				Custom.decreaseDurability(item);
 			}
@@ -268,6 +270,9 @@ public class MCPlugin extends JavaPlugin implements Listener{
 					block.getType() == Material.GOLD_ORE ||
 					block.getType() == Material.EMERALD_ORE ||
 					block.getType() == Material.IRON_ORE ||
+					block.getType() == Material.NETHER_GOLD_ORE ||
+					block.getType() == Material.NETHER_QUARTZ_ORE ||
+					block.getType() == Material.NETHERITE_BLOCK ||
 					block.getType() == Material.COAL_ORE) {
 				if (!block.getDrops().isEmpty()) {
 					ItemStack stack = new ItemStack(block.getDrops().iterator().next().getType(), 4);
@@ -626,9 +631,9 @@ public class MCPlugin extends JavaPlugin implements Listener{
 			player.getInventory().addItem(Custom.createImprovedGoldShovel());
 			player.sendMessage(ChatColor.GOLD+"Added Gold Shovel");
 			break;
-		case "D.AXE":
+		case "D.PAXE":
 			player.getInventory().addItem(Custom.createImprovedDiamondPickaxe());
-			player.sendMessage(ChatColor.GOLD+"Added Diamond Axe");
+			player.sendMessage(ChatColor.GOLD+"Added Diamond Pickaxe");
 			break;
 		case "S.WAND":
 			player.getInventory().addItem(Custom.createSnowWand());
