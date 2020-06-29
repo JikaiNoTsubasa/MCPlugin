@@ -8,6 +8,9 @@ commands:
   wregister:
     description: Enregistre un teleport
     usage: /wregister NAME
+  warp:
+    description: Teleporte sur un teleport
+    usage: /warp NAME
   wlist:
     description: Liste les teleports
     usage: /wlist

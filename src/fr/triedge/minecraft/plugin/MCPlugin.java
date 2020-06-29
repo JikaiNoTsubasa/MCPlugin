@@ -76,8 +76,9 @@ import fr.triedge.minecraft.plugin.utils.Utils;
  * [ ] v1.4 Bigger jump
  * [x] v1.4 Hidden TP with h_ [TO TEST]
  * [x] v1.4 Spawn mob Pack [TO TEST]
+ * [x] v1.16 Detector in different directions
+ * [x] v1.16 Added warp command
  * [ ] Custom mob drop emerald (BOSS)
- * [ ] Detector in different directions
  * [ ] Custom mob spawn (obscurity)
  * [ ] Popo to teleport from anywhere - custom craft
  * [ ] Popo REZ
@@ -147,6 +148,14 @@ public class MCPlugin extends JavaPlugin implements Listener{
 			}else if (command.getName().equalsIgnoreCase("detector")) {
 				actionDetector(sender);
 				return true;
+			}else if (command.getName().equalsIgnoreCase("warp")) {
+				if (args.length>=1) {
+					String name = args[0];
+					actionWarp(sender, name);
+				}else {
+					return false;
+				}
+				return true;
 			}else if (command.getName().equalsIgnoreCase("inv")) {
 				if (args.length>=1) {
 					int id = Integer.parseInt(args[0]);
@@ -187,6 +196,13 @@ public class MCPlugin extends JavaPlugin implements Listener{
 			break;
 		case NO:
 			break;
+		}
+	}
+	
+	private void actionWarp(CommandSender sender, String name) {
+		if (sender instanceof Player) {
+			Player player = (Player) sender;
+			warpTo(player, name);
 		}
 	}
 
@@ -364,7 +380,8 @@ public class MCPlugin extends JavaPlugin implements Listener{
 				}
 
 			}
-			onPlayerUseCustomItem(event, event.getPlayer().getInventory().getItemInMainHand().getItemMeta().getDisplayName());
+			if (event.getPlayer().getInventory().getItemInMainHand().getItemMeta() != null && event.getPlayer().getInventory().getItemInMainHand().getItemMeta().getDisplayName() != null)
+				onPlayerUseCustomItem(event, event.getPlayer().getInventory().getItemInMainHand().getItemMeta().getDisplayName());
 		}
 
 	}
@@ -468,6 +485,8 @@ public class MCPlugin extends JavaPlugin implements Listener{
 								type == Material.GOLD_ORE ||
 								type == Material.COAL_ORE ||
 								type == Material.EMERALD_ORE ||
+								type == Material.ANCIENT_DEBRIS ||
+								type == Material.NETHERITE_BLOCK ||
 								type == Material.LAPIS_ORE) {
 							blocks.add(loc.getBlock());
 						}
