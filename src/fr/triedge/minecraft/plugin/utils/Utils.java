@@ -50,6 +50,7 @@ public class Utils {
 				}else {
 					stack.setAmount(count - 1);
 				}
+				break;
 			}
 		}
 	}
