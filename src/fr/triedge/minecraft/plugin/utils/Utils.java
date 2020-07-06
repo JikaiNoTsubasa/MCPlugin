@@ -45,13 +45,25 @@ public class Utils {
 				continue;
 			if (stack.getItemMeta().getDisplayName().equals(name)) {
 				int count = stack.getAmount();
-				if (count < 1) {
+				if (count <= 1) {
 					inv.remove(stack);
 				}else {
 					stack.setAmount(count - 1);
 				}
 				break;
 			}
+		}
+	}
+	
+	public static void decreaseItemFromInventory(ItemStack stack, Player player) {
+		if (stack == null || player == null)
+			return;
+		PlayerInventory inv = player.getInventory();
+		int count = stack.getAmount();
+		if (count <= 1) {
+			inv.remove(stack);
+		}else {
+			stack.setAmount(count - 1);
 		}
 	}
 	

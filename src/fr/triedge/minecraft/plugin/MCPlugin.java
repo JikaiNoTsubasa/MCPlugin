@@ -570,10 +570,12 @@ public class MCPlugin extends JavaPlugin implements Listener{
 	private void launchGrenade(Player player, float power, long ticks ) {
 		// must be player's inventory item
 		ItemStack stack = player.getInventory().getItemInMainHand();
-		stack.setAmount(1); // 20200706.0
-		final Item item = player.getWorld().dropItem(player.getEyeLocation(), stack);
+		ItemStack stack2 = new ItemStack(stack);
+		stack2.setAmount(1); // 20200706.0
+		final Item item = player.getWorld().dropItem(player.getEyeLocation(), stack2);
 		item.setVelocity(player.getEyeLocation().getDirection());
-		Utils.decreaseItemFromInventory(item.getItemStack().getItemMeta().getDisplayName(), player);
+		//Utils.decreaseItemFromInventory(item.getItemStack().getItemMeta().getDisplayName(), player);
+		Utils.decreaseItemFromInventory(stack, player);
 		//player.getInventory().removeItem(item.getItemStack());
 		final float pow = power;
 		// After 3sec
