@@ -16,10 +16,8 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
-import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
-import org.bukkit.block.Sign;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -46,7 +44,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitScheduler;
-import org.bukkit.util.Vector;
 
 import fr.triedge.minecraft.plugin.dialog.Dialog;
 import fr.triedge.minecraft.plugin.dialog.DialogAnswer;
@@ -54,6 +51,7 @@ import fr.triedge.minecraft.plugin.inventory.CustomInventory;
 import fr.triedge.minecraft.plugin.magic.Spell;
 import fr.triedge.minecraft.plugin.magic.SpellFireBall;
 import fr.triedge.minecraft.plugin.magic.SpellSnowBall;
+import fr.triedge.minecraft.plugin.teleport.TeleportListener;
 import fr.triedge.minecraft.plugin.utils.Utils;
 
 
@@ -95,6 +93,11 @@ import fr.triedge.minecraft.plugin.utils.Utils;
  * [x] v1.3 ULT STICK breaks block but no loot from block
  * [x] v1.3 ULT WATER fill up water in bottle and changes it's name with right click
  * [x] v1.3 Teleport could happen event if destination is not on diamond block
+ * [x] v1.16 When several stacks of nuke in inventory, it decreases all stacks when using
+ * [x] 20200706.0 v1.16.1 When nuke is sent and pickedup, stack of 64 is gained
+ * [x] 20200706.1 v1.16.1 When nuke explose, now set in fire and break blocs
+ * [x] 20200706.3 v1.16.1 Deported teleport code to dedicated listener
+ * [x] 20200706.4 v1.16.1 Detector in different directions and added new blocks
  *
  * Client:
  * [ ] Create laboratory
@@ -111,16 +114,15 @@ public class MCPlugin extends JavaPlugin implements Listener{
 	// https://hub.spigotmc.org/nexus/content/repositories/snapshots/org/spigotmc/spigot-api/1.14.4-R0.1-SNAPSHOT/
 
 	public static final String ULT_STICK 	= "ULTIMATE STICK";
-	public static final String VERSION		= "v1.16";
+	public static final String VERSION		= "v1.16.1";
 	public static final String VERSION_SUB	= "Raise of Lava";
-	public static final String INV_FOLDER	= "inventories/";
 
 	//public FileConfiguration cfgMagic;
 	public ConfigurationHandler magic;
 	public ConfigurationHandler inventoryConfig;
 	public CustomInventory inventoryManager;
+	public TeleportListener teleportListener;
 
-	private HTTPDashboard dashboard;
 	private HashMap<Player, Dialog> dialogs = new HashMap<>();
 
 	@Override
@@ -129,7 +131,7 @@ public class MCPlugin extends JavaPlugin implements Listener{
 			if (command.getName().equalsIgnoreCase("wregister")) {
 				if (args.length>=1) {
 					String name = args[0];
-					registerWarp(sender, name);
+					teleportListener.registerWarp(sender, name);
 					return true;
 				}
 			}else if (command.getName().equalsIgnoreCase("whelp")) {
@@ -137,7 +139,8 @@ public class MCPlugin extends JavaPlugin implements Listener{
 				return true;
 			}else if (command.getName().equalsIgnoreCase("wremove")) {
 				if (args.length>=1) {
-					removeWarp(sender, args[0]);
+					String name = args[0];
+					teleportListener.removeWarp(sender, name);
 					return true;
 				}else {
 					return false;
@@ -172,13 +175,6 @@ public class MCPlugin extends JavaPlugin implements Listener{
 					actionSaveInventory(sender, 0);
 				}
 				return true;
-			}else if (command.getName().equalsIgnoreCase("warp")) {
-				if (args.length>=1) {
-					String name = args[0];
-					opWarp(sender, name);
-					return true;
-				}
-				return true;
 			}else if (command.getName().equalsIgnoreCase("oui")) {
 				manageDialog(sender, DialogAnswer.YES);
 			}else if (command.getName().equalsIgnoreCase("non")) {
@@ -200,10 +196,7 @@ public class MCPlugin extends JavaPlugin implements Listener{
 	}
 	
 	private void actionWarp(CommandSender sender, String name) {
-		if (sender instanceof Player) {
-			Player player = (Player) sender;
-			warpTo(player, name);
-		}
+			teleportListener.warpTo(sender, name);
 	}
 
 	private void actionSaveInventory(CommandSender sender, int id) {
@@ -215,16 +208,16 @@ public class MCPlugin extends JavaPlugin implements Listener{
 		}
 	}
 
-	private void opWarp(CommandSender sender, String name) {
-		if (sender instanceof Player) {
-			Player player = (Player) sender;
-			if (doesWarpExist(name)) {
-				if (player.hasPermission("server.op")) {
-					warpTo(sender, name);
-				}
-			}
-		}
-	}
+//	private void opWarp(CommandSender sender, String name) {
+//		if (sender instanceof Player) {
+//			Player player = (Player) sender;
+//			if (doesWarpExist(name)) {
+//				if (player.hasPermission("server.op")) {
+//					warpTo(sender, name);
+//				}
+//			}
+//		}
+//	}
 
 	@EventHandler
 	public void onBlockDamageEvent(BlockDamageEvent event) {
@@ -371,20 +364,21 @@ public class MCPlugin extends JavaPlugin implements Listener{
 		// Executes for main hand
 		if (event.getHand() != null && event.getHand().equals(EquipmentSlot.HAND) && event.getPlayer().getInventory().getItemInMainHand() != null) {
 			// Right click block
-			if(event.getAction() == Action.RIGHT_CLICK_BLOCK)
-			{
-				// If WALL Sign
-				Block block = event.getClickedBlock();
-				if (block != null && (block.getType() == Material.ACACIA_WALL_SIGN || block.getType() == Material.BIRCH_WALL_SIGN || block.getType() == Material.DARK_OAK_WALL_SIGN || block.getType() == Material.JUNGLE_WALL_SIGN || block.getType() == Material.OAK_WALL_SIGN || block.getType() == Material.SPRUCE_WALL_SIGN))
-				{
-					Player player = event.getPlayer();
-					String[] lines = readSign(block);
-					if (lines != null) {
-						parseSign(lines[0], player);
-					}
-				}
-
-			}
+			
+//			if(event.getAction() == Action.RIGHT_CLICK_BLOCK)
+//			{
+//				// If WALL Sign
+//				Block block = event.getClickedBlock();
+//				if (block != null && (block.getType() == Material.ACACIA_WALL_SIGN || block.getType() == Material.BIRCH_WALL_SIGN || block.getType() == Material.DARK_OAK_WALL_SIGN || block.getType() == Material.JUNGLE_WALL_SIGN || block.getType() == Material.OAK_WALL_SIGN || block.getType() == Material.SPRUCE_WALL_SIGN))
+//				{
+//					Player player = event.getPlayer();
+//					String[] lines = readSign(block);
+//					if (lines != null) {
+//						parseSign(lines[0], player);
+//					}
+//				}
+//
+//			}
 			if (event.getPlayer().getInventory().getItemInMainHand().getItemMeta() != null && event.getPlayer().getInventory().getItemInMainHand().getItemMeta().getDisplayName() != null)
 				onPlayerUseCustomItem(event, event.getPlayer().getInventory().getItemInMainHand().getItemMeta().getDisplayName());
 		}
@@ -477,6 +471,7 @@ public class MCPlugin extends JavaPlugin implements Listener{
 			int endY = block.getY() +(maxDist/2);
 			int endZ = block.getZ() +(maxDist/2);
 
+			// 20200706.4
 			for (int x = startX; x <= endX; ++x) {
 				for (int y = startY; y <= endY; ++y) {
 					for (int z = startZ; z <= endZ; ++z) {
@@ -552,29 +547,30 @@ public class MCPlugin extends JavaPlugin implements Listener{
 		sender.sendMessage(tmp.toString());
 	}
 
-	private boolean doesWarpExist(String name) {
-		Set<String> list = getConfig().getKeys(false);
-		for (String name2 : list) {
-			if (name.equals(name2))
-				return true;
-		}
-		return false;
-	}
+//	private boolean doesWarpExist(String name) {
+//		Set<String> list = getConfig().getKeys(false);
+//		for (String name2 : list) {
+//			if (name.equals(name2))
+//				return true;
+//		}
+//		return false;
+//	}
 
-	private void removeWarp(CommandSender sender, String name) {
-		if (sender instanceof Player) {
-			Player player = (Player) sender;
-			if (doesWarpExist(name)) {
-				getConfig().set(name, null);
-				player.sendMessage(ChatColor.RED+"Suppression de "+name+" faite.");
-				saveConfig();
-			}
-		}
-	}
+//	private void removeWarp(CommandSender sender, String name) {
+//		if (sender instanceof Player) {
+//			Player player = (Player) sender;
+//			if (doesWarpExist(name)) {
+//				getConfig().set(name, null);
+//				player.sendMessage(ChatColor.RED+"Suppression de "+name+" faite.");
+//				saveConfig();
+//			}
+//		}
+//	}
 
 	private void launchGrenade(Player player, float power, long ticks ) {
 		// must be player's inventory item
 		ItemStack stack = player.getInventory().getItemInMainHand();
+		stack.setAmount(1); // 20200706.0
 		final Item item = player.getWorld().dropItem(player.getEyeLocation(), stack);
 		item.setVelocity(player.getEyeLocation().getDirection());
 		Utils.decreaseItemFromInventory(item.getItemStack().getItemMeta().getDisplayName(), player);
@@ -585,91 +581,91 @@ public class MCPlugin extends JavaPlugin implements Listener{
 			@Override
 			public void run() {
 				item.getWorld().playEffect(item.getLocation(), Effect.SMOKE, 5);
-				item.getWorld().createExplosion(item.getLocation(), pow);
+				item.getWorld().createExplosion(item.getLocation(), pow, true, true); // 20200706.1
 				item.remove();
 				item.playEffect(EntityEffect.WOLF_SMOKE);
 			}
 		}, ticks);
 	}
 
-	private void parseSign(String line, Player player) {
-		String[] sp = line.split(":");
-		switch (sp[0]) {
-		case "TP":
-			if (sp.length >=2)
-				actionTP(sp[1],player);
-			break;
-		case "ULT":
-			if (sp.length >=2)
-				actionULT(sp[1],player);
-			break;
+//	private void parseSign(String line, Player player) {
+//		String[] sp = line.split(":");
+//		switch (sp[0]) {
+//		case "TP":
+//			if (sp.length >=2)
+//				actionTP(sp[1],player);
+//			break;
+//		case "ULT":
+//			if (sp.length >=2)
+//				actionULT(sp[1],player);
+//			break;
+//
+//		default:
+//			break;
+//		}
+//	}
 
-		default:
-			break;
-		}
-	}
+//	private void actionULT(String name, Player player) {
+//		switch (name) {
+//		case "STICK":
+//			player.getInventory().addItem(Custom.createUtlStick());
+//			player.sendMessage(ChatColor.GOLD+"Added STICK");
+//			break;
+//		case "WATER":
+//			player.getInventory().addItem(Custom.createUtlBottle());
+//			player.sendMessage(ChatColor.GOLD+"Added WATER");
+//			break;
+//		case "G.PAXE":
+//			player.getInventory().addItem(Custom.createImprovedGoldPickaxe());
+//			player.sendMessage(ChatColor.GOLD+"Added Gold Pickaxe");
+//			break;
+//		case "G.AXE":
+//			player.getInventory().addItem(Custom.createImprovedGoldAxe());
+//			player.sendMessage(ChatColor.GOLD+"Added Gold Axe");
+//			break;
+//		case "G.SHO":
+//			player.getInventory().addItem(Custom.createImprovedGoldShovel());
+//			player.sendMessage(ChatColor.GOLD+"Added Gold Shovel");
+//			break;
+//		case "D.PAXE":
+//			player.getInventory().addItem(Custom.createImprovedDiamondPickaxe());
+//			player.sendMessage(ChatColor.GOLD+"Added Diamond Pickaxe");
+//			break;
+//		case "S.WAND":
+//			player.getInventory().addItem(Custom.createSnowWand());
+//			player.sendMessage(ChatColor.GOLD+"Added Sonw Wand");
+//			break;
+//		case "F.WAND":
+//			player.getInventory().addItem(Custom.createFireWand());
+//			player.sendMessage(ChatColor.GOLD+"Added Fire Wand");
+//			break;
+//		case "POP.INV":
+//			player.getInventory().addItem(Custom.createInventoryPotion());
+//			player.sendMessage(ChatColor.GOLD+"Added Inventory Potion");
+//			break;
+//		case "GRE":
+//			player.getInventory().addItem(Custom.createGrenade(10));
+//			player.sendMessage(ChatColor.GOLD+"Added 10 Grenades");
+//			break;
+//		default:
+//			break;
+//		}
+//	}
 
-	private void actionULT(String name, Player player) {
-		switch (name) {
-		case "STICK":
-			player.getInventory().addItem(Custom.createUtlStick());
-			player.sendMessage(ChatColor.GOLD+"Added STICK");
-			break;
-		case "WATER":
-			player.getInventory().addItem(Custom.createUtlBottle());
-			player.sendMessage(ChatColor.GOLD+"Added WATER");
-			break;
-		case "G.PAXE":
-			player.getInventory().addItem(Custom.createImprovedGoldPickaxe());
-			player.sendMessage(ChatColor.GOLD+"Added Gold Pickaxe");
-			break;
-		case "G.AXE":
-			player.getInventory().addItem(Custom.createImprovedGoldAxe());
-			player.sendMessage(ChatColor.GOLD+"Added Gold Axe");
-			break;
-		case "G.SHO":
-			player.getInventory().addItem(Custom.createImprovedGoldShovel());
-			player.sendMessage(ChatColor.GOLD+"Added Gold Shovel");
-			break;
-		case "D.PAXE":
-			player.getInventory().addItem(Custom.createImprovedDiamondPickaxe());
-			player.sendMessage(ChatColor.GOLD+"Added Diamond Pickaxe");
-			break;
-		case "S.WAND":
-			player.getInventory().addItem(Custom.createSnowWand());
-			player.sendMessage(ChatColor.GOLD+"Added Sonw Wand");
-			break;
-		case "F.WAND":
-			player.getInventory().addItem(Custom.createFireWand());
-			player.sendMessage(ChatColor.GOLD+"Added Fire Wand");
-			break;
-		case "POP.INV":
-			player.getInventory().addItem(Custom.createInventoryPotion());
-			player.sendMessage(ChatColor.GOLD+"Added Inventory Potion");
-			break;
-		case "GRE":
-			player.getInventory().addItem(Custom.createGrenade(10));
-			player.sendMessage(ChatColor.GOLD+"Added 10 Grenades");
-			break;
-		default:
-			break;
-		}
-	}
-
-	private void actionTP(String name, Player player) {
-		Block block = player.getLocation().getBlock().getRelative(BlockFace.DOWN);
-		getLogger().info("### Action TP ###");
-		getLogger().info("# "+player.getName());
-		//getLogger().info(block.getLocation().getX()+"/"+block.getLocation().getY()+"/"+block.getLocation().getZ());
-		//getLogger().info("Block Type: "+block.getType());
-		//getLogger().info("Diamond: "+Material.DIAMOND_BLOCK);
-
-		if (block.getType().equals(Material.DIAMOND_BLOCK)) {
-			warpTo(player, name);
-		}else {
-			player.sendMessage("Vous devez etre sur un block de diamant pour cette commande.");
-		}
-	}
+//	private void actionTP(String name, Player player) {
+//		Block block = player.getLocation().getBlock().getRelative(BlockFace.DOWN);
+//		getLogger().info("### Action TP ###");
+//		getLogger().info("# "+player.getName());
+//		//getLogger().info(block.getLocation().getX()+"/"+block.getLocation().getY()+"/"+block.getLocation().getZ());
+//		//getLogger().info("Block Type: "+block.getType());
+//		//getLogger().info("Diamond: "+Material.DIAMOND_BLOCK);
+//
+//		if (block.getType().equals(Material.DIAMOND_BLOCK)) {
+//			warpTo(player, name);
+//		}else {
+//			player.sendMessage("Vous devez etre sur un block de diamant pour cette commande.");
+//		}
+//	}
 
 	@EventHandler
 	public void onPlayerJoin(PlayerJoinEvent event) {
@@ -688,44 +684,44 @@ public class MCPlugin extends JavaPlugin implements Listener{
 		inventoryManager.storeInventory(p.getName(), 0);
 	}
 
-	public String[] readSign(Block block) {
-		Sign sign = (Sign) block.getState();
-		String[] lines = sign.getLines();
-		if (lines.length != 0)
-			return lines;
-		return null;
-	}
+//	public String[] readSign(Block block) {
+//		Sign sign = (Sign) block.getState();
+//		String[] lines = sign.getLines();
+//		if (lines.length != 0)
+//			return lines;
+//		return null;
+//	}
 
-	private void warpTo(CommandSender sender, String target) {
-		if (sender instanceof Player) {
-			if (doesWarpExist(target)) {
-				Player player = (Player) sender;
-
-
-				float pitch = player.getLocation().getPitch();
-				float yaw = player.getLocation().getYaw();
-				Vector vector = getConfig().getVector(target+".location");
-				String world_str = getConfig().getString(target+".world");
-				World world = Bukkit.getWorld(world_str);
-				world.playEffect(player.getLocation(), Effect.ENDER_SIGNAL, 0);
-				Location target_loc = new Location(world, vector.getX(),vector.getY(),vector.getZ());
-				target_loc.setPitch(pitch);
-				target_loc.setYaw(yaw);
-
-				Block block = target_loc.getBlock().getRelative(BlockFace.DOWN);
-				if (block != null && block.getType() == Material.DIAMOND_BLOCK) {
-					player.teleport(target_loc);
-					world.playEffect(player.getLocation(), Effect.ENDER_SIGNAL, 0);
-					getLogger().info("# "+player.getName()+" warped to "+target);
-				}else {
-					player.sendMessage(ChatColor.RED+"La destination n'est pas un block de diamant");
-				}
-
-			}else {
-				sender.sendMessage("La destination n'existe pas!");
-			}
-		}
-	}
+//	private void warpTo(CommandSender sender, String target) {
+//		if (sender instanceof Player) {
+//			if (doesWarpExist(target)) {
+//				Player player = (Player) sender;
+//
+//
+//				float pitch = player.getLocation().getPitch();
+//				float yaw = player.getLocation().getYaw();
+//				Vector vector = getConfig().getVector(target+".location");
+//				String world_str = getConfig().getString(target+".world");
+//				World world = Bukkit.getWorld(world_str);
+//				world.playEffect(player.getLocation(), Effect.ENDER_SIGNAL, 0);
+//				Location target_loc = new Location(world, vector.getX(),vector.getY(),vector.getZ());
+//				target_loc.setPitch(pitch);
+//				target_loc.setYaw(yaw);
+//
+//				Block block = target_loc.getBlock().getRelative(BlockFace.DOWN);
+//				if (block != null && block.getType() == Material.DIAMOND_BLOCK) {
+//					player.teleport(target_loc);
+//					world.playEffect(player.getLocation(), Effect.ENDER_SIGNAL, 0);
+//					getLogger().info("# "+player.getName()+" warped to "+target);
+//				}else {
+//					player.sendMessage(ChatColor.RED+"La destination n'est pas un block de diamant");
+//				}
+//
+//			}else {
+//				sender.sendMessage("La destination n'existe pas!");
+//			}
+//		}
+//	}
 
 	private void showHelp(CommandSender sender) {
 		if (sender instanceof Player) {
@@ -736,28 +732,28 @@ public class MCPlugin extends JavaPlugin implements Listener{
 		}
 	}
 
-	private void registerWarp(CommandSender sender, String name) {
-		if (sender instanceof Player) {
-			Player player = (Player) sender;
-			Block block = player.getLocation().getBlock().getRelative(BlockFace.DOWN);
-			//getLogger().info(block.getLocation().getX()+"/"+block.getLocation().getY()+"/"+block.getLocation().getZ());
-			//getLogger().info("Block Type: "+block.getType());
-			//getLogger().info("Diamond: "+Material.DIAMOND_BLOCK);
-
-			if (block.getType().equals(Material.DIAMOND_BLOCK)) {
-				Vector vector = player.getLocation().toVector();
-				String world = player.getWorld().getName();
-				getConfig().set(name+".location", vector); 		// Saves the location as a vector
-				getConfig().set(name+".world", world);			//Saves the world name
-				//sender.sendMessage("Warp["+name+"][World: "+world+" X:"+vector.getX()+" Y:"+vector.getY()+" Z"+vector.getZ()+"]");
-				sender.sendMessage("Cible de teleportation sauvegard�: "+name);
-				getLogger().info("# REGISTER TP: "+name+"["+vector.getBlockX()+"/"+vector.getBlockY()+"/"+vector.getBlockZ()+"]");
-				saveConfig();
-			}else {
-				sender.sendMessage("Vous devez etre sur un block de diamant pour cette commande.");
-			}
-		}
-	}
+//	private void registerWarp(CommandSender sender, String name) {
+//		if (sender instanceof Player) {
+//			Player player = (Player) sender;
+//			Block block = player.getLocation().getBlock().getRelative(BlockFace.DOWN);
+//			//getLogger().info(block.getLocation().getX()+"/"+block.getLocation().getY()+"/"+block.getLocation().getZ());
+//			//getLogger().info("Block Type: "+block.getType());
+//			//getLogger().info("Diamond: "+Material.DIAMOND_BLOCK);
+//
+//			if (block.getType().equals(Material.DIAMOND_BLOCK)) {
+//				Vector vector = player.getLocation().toVector();
+//				String world = player.getWorld().getName();
+//				getConfig().set(name+".location", vector); 		// Saves the location as a vector
+//				getConfig().set(name+".world", world);			//Saves the world name
+//				//sender.sendMessage("Warp["+name+"][World: "+world+" X:"+vector.getX()+" Y:"+vector.getY()+" Z"+vector.getZ()+"]");
+//				sender.sendMessage("Cible de teleportation sauvegard�: "+name);
+//				getLogger().info("# REGISTER TP: "+name+"["+vector.getBlockX()+"/"+vector.getBlockY()+"/"+vector.getBlockZ()+"]");
+//				saveConfig();
+//			}else {
+//				sender.sendMessage("Vous devez etre sur un block de diamant pour cette commande.");
+//			}
+//		}
+//	}
 
 	@Override
 	public void onDisable() {
@@ -769,6 +765,11 @@ public class MCPlugin extends JavaPlugin implements Listener{
 	@Override
 	public void onEnable() {
 		super.onEnable();
+		
+		// Create teleport handler
+		teleportListener = new TeleportListener(this);
+		teleportListener.loadWarps();
+		
 
 		// Create Inventory Manager
 		inventoryConfig = new ConfigurationHandler(this, "inventory");
@@ -783,6 +784,7 @@ public class MCPlugin extends JavaPlugin implements Listener{
 
 		// Register this plugin
 		getServer().getPluginManager().registerEvents(this, this);
+		getServer().getPluginManager().registerEvents(teleportListener, this);
 
 		// Load config
 		magic = new ConfigurationHandler(this, "magic");
@@ -930,14 +932,6 @@ public class MCPlugin extends JavaPlugin implements Listener{
 
 	public double round(double val) {
 		return (double)Math.round(val*100)/100;
-	}
-
-	public HTTPDashboard getDashboard() {
-		return dashboard;
-	}
-
-	public void setDashboard(HTTPDashboard dashboard) {
-		this.dashboard = dashboard;
 	}
 
 	public static void main(String[] args) {
