@@ -97,7 +97,8 @@ import fr.triedge.minecraft.plugin.utils.Utils;
  * [x] 20200706.0 v1.16.1 When nuke is sent and pickedup, stack of 64 is gained
  * [x] 20200706.1 v1.16.1 When nuke explose, now set in fire and break blocs
  * [x] 20200706.3 v1.16.1 Deported teleport code to dedicated listener
- * [x] 20200706.4 v1.16.1 Detector in different directions and added new blocks
+ * [x] 20200706.4 v1.16.2 Detector in different directions and added new blocks
+ * [x] 20200706.5 Fixed version numbering
  *
  * Client:
  * [ ] Create laboratory
@@ -114,7 +115,7 @@ public class MCPlugin extends JavaPlugin implements Listener{
 	// https://hub.spigotmc.org/nexus/content/repositories/snapshots/org/spigotmc/spigot-api/1.14.4-R0.1-SNAPSHOT/
 
 	public static final String ULT_STICK 	= "ULTIMATE STICK";
-	public static final String VERSION		= "v1.16.1";
+	public static final String VERSION		= "v20200706.5";
 	public static final String VERSION_SUB	= "Raise of Lava";
 
 	//public FileConfiguration cfgMagic;
